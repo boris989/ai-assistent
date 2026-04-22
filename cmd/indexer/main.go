@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	root := "./" // потом поменяем
+	root := "./test_project" // потом поменяем
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -50,7 +50,6 @@ func main() {
 		panic(err)
 	}
 }
-
 func parseGoFile(path string) {
 	fset := token.NewFileSet()
 
@@ -67,6 +66,29 @@ func parseGoFile(path string) {
 			continue
 		}
 
+		start := fset.Position(fn.Pos()).Offset
+		end := fset.Position(fn.End()).Offset
+
+		content, err := extractCode(path, start, end)
+		if err != nil {
+			continue
+		}
+
 		fmt.Println("  → FUNC:", fn.Name.Name)
+		fmt.Println(content)
+		fmt.Println("-----")
 	}
+}
+
+func extractCode(path string, start, end int) (string, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	if start >= len(data) || end > len(data) {
+		return "", fmt.Errorf("invalid range")
+	}
+
+	return string(data[start:end]), nil
 }
