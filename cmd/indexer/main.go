@@ -7,10 +7,12 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+
+	"github.com/boris989/ai-assistent/internal/indexer"
 )
 
 func main() {
-	root := "./test_project" // потом поменяем
+	root := "./test_project" // путь к тестовому проекту
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -27,20 +29,13 @@ func main() {
 		switch ext {
 
 		case ".go":
-			fmt.Println("[GO]   ", path)
-			parseGoFile(path)
+			fmt.Println("[GO]", path)
 
-		case ".ts", ".tsx", ".js":
-			fmt.Println("[JS]   ", path)
+			fileChunks := parseGoFile(path)
 
-		case ".vue":
-			fmt.Println("[VUE]  ", path)
-
-		case ".py":
-			fmt.Println("[PY]   ", path)
-
-		case ".rb":
-			fmt.Println("[RUBY] ", path)
+			for _, c := range fileChunks {
+				fmt.Println("  →", c.Type, ":", c.Name, ":", c.Content)
+			}
 		}
 
 		return nil
@@ -50,15 +45,19 @@ func main() {
 		panic(err)
 	}
 }
-func parseGoFile(path string) {
+
+func parseGoFile(path string) []indexer.Chunk {
 	fset := token.NewFileSet()
 
 	node, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
 	if err != nil {
 		fmt.Println("parse error:", err)
-		return
+		return nil
 	}
 
+	var chunks []indexer.Chunk
+
+	// --- func ---
 	for _, decl := range node.Decls {
 
 		fn, ok := decl.(*ast.FuncDecl)
@@ -74,10 +73,50 @@ func parseGoFile(path string) {
 			continue
 		}
 
-		fmt.Println("  → FUNC:", fn.Name.Name)
-		fmt.Println(content)
-		fmt.Println("-----")
+		chunks = append(chunks, indexer.Chunk{
+			FilePath: path,
+			Name:     fn.Name.Name,
+			Type:     "function",
+			Content:  content,
+		})
 	}
+
+	// --- structs ---
+	for _, decl := range node.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok {
+			continue
+		}
+
+		for _, spec := range gen.Specs {
+			typeSpec, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+
+			_, ok = typeSpec.Type.(*ast.StructType)
+			if !ok {
+				continue
+			}
+
+			start := fset.Position(typeSpec.Pos()).Offset
+			end := fset.Position(typeSpec.End()).Offset
+
+			content, err := extractCode(path, start, end)
+			if err != nil {
+				continue
+			}
+
+			chunks = append(chunks, indexer.Chunk{
+				FilePath: path,
+				Name:     typeSpec.Name.Name,
+				Type:     "struct",
+				Content:  content,
+			})
+		}
+	}
+
+	return chunks
 }
 
 func extractCode(path string, start, end int) (string, error) {
