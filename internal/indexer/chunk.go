@@ -6,7 +6,12 @@ const (
 	ChunkTypeInterface = "interface"
 )
 
+const (
+	LanguageGo = "go"
+)
+
 type Chunk struct {
+	ID       string
 	FilePath string
 	Language string
 	Name     string

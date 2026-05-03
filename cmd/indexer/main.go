@@ -70,7 +70,9 @@ func parseGoFile(path string) []indexer.Chunk {
 			}
 
 			chunks = append(chunks, indexer.Chunk{
+				ID:       indexer.GenerateID(content),
 				FilePath: path,
+				Language: indexer.LanguageGo,
 				Name:     decl.Name.Name,
 				Type:     indexer.ChunkTypeFunction,
 				Content:  content,
@@ -95,7 +97,9 @@ func parseGoFile(path string) []indexer.Chunk {
 
 				case *ast.StructType:
 					chunks = append(chunks, indexer.Chunk{
+						ID:       indexer.GenerateID(content),
 						FilePath: path,
+						Language: indexer.LanguageGo,
 						Name:     typeSpec.Name.Name,
 						Type:     indexer.ChunkTypeStruct,
 						Content:  content,
@@ -103,7 +107,9 @@ func parseGoFile(path string) []indexer.Chunk {
 
 				case *ast.InterfaceType:
 					chunks = append(chunks, indexer.Chunk{
+						ID:       indexer.GenerateID(content),
 						FilePath: path,
+						Language: indexer.LanguageGo,
 						Name:     typeSpec.Name.Name,
 						Type:     indexer.ChunkTypeInterface,
 						Content:  content,
