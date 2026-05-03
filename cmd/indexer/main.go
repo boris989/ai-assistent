@@ -14,6 +14,8 @@ import (
 func main() {
 	root := "./test_project" // путь к тестовому проекту
 
+	var allChunks []indexer.Chunk
+
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -33,9 +35,7 @@ func main() {
 
 			fileChunks := parseGoFile(path)
 
-			for _, c := range fileChunks {
-				fmt.Println("  →", c.Type, ":", c.Name, ":", c.Content)
-			}
+			allChunks = append(allChunks, fileChunks...)
 		}
 
 		return nil
@@ -44,6 +44,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("TOTAL CHUNKS:", len(allChunks))
 }
 
 func parseGoFile(path string) []indexer.Chunk {
