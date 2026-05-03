@@ -72,7 +72,7 @@ func parseGoFile(path string) []indexer.Chunk {
 			chunks = append(chunks, indexer.Chunk{
 				FilePath: path,
 				Name:     decl.Name.Name,
-				Type:     "function",
+				Type:     indexer.ChunkTypeFunction,
 				Content:  content,
 			})
 
@@ -97,7 +97,7 @@ func parseGoFile(path string) []indexer.Chunk {
 					chunks = append(chunks, indexer.Chunk{
 						FilePath: path,
 						Name:     typeSpec.Name.Name,
-						Type:     "struct",
+						Type:     indexer.ChunkTypeStruct,
 						Content:  content,
 					})
 
@@ -105,7 +105,7 @@ func parseGoFile(path string) []indexer.Chunk {
 					chunks = append(chunks, indexer.Chunk{
 						FilePath: path,
 						Name:     typeSpec.Name.Name,
-						Type:     "interface",
+						Type:     indexer.ChunkTypeInterface,
 						Content:  content,
 					})
 				}
