@@ -81,7 +81,7 @@ func parseGoFile(path string) []indexer.Chunk {
 		})
 	}
 
-	// --- structs ---
+	// --- types ---
 	for _, decl := range node.Decls {
 		gen, ok := decl.(*ast.GenDecl)
 		if !ok {
@@ -94,8 +94,13 @@ func parseGoFile(path string) []indexer.Chunk {
 				continue
 			}
 
-			_, ok = typeSpec.Type.(*ast.StructType)
-			if !ok {
+			chunkType := ""
+			switch typeSpec.Type.(type) {
+			case *ast.StructType:
+				chunkType = "struct"
+			case *ast.InterfaceType:
+				chunkType = "interface"
+			default:
 				continue
 			}
 
@@ -110,7 +115,7 @@ func parseGoFile(path string) []indexer.Chunk {
 			chunks = append(chunks, indexer.Chunk{
 				FilePath: path,
 				Name:     typeSpec.Name.Name,
-				Type:     "struct",
+				Type:     chunkType,
 				Content:  content,
 			})
 		}

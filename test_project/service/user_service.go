@@ -1,8 +1,8 @@
 package service
 
 import (
-	"test_project/model"
-	"test_project/repo"
+	"github.com/boris989/ai-assistent/test_project/model"
+	"github.com/boris989/ai-assistent/test_project/repo"
 )
 
 type UserService struct {
