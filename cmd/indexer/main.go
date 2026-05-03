@@ -57,55 +57,12 @@ func parseGoFile(path string) []indexer.Chunk {
 
 	var chunks []indexer.Chunk
 
-	// --- func ---
 	for _, decl := range node.Decls {
+		switch decl := decl.(type) {
 
-		fn, ok := decl.(*ast.FuncDecl)
-		if !ok {
-			continue
-		}
-
-		start := fset.Position(fn.Pos()).Offset
-		end := fset.Position(fn.End()).Offset
-
-		content, err := extractCode(path, start, end)
-		if err != nil {
-			continue
-		}
-
-		chunks = append(chunks, indexer.Chunk{
-			FilePath: path,
-			Name:     fn.Name.Name,
-			Type:     "function",
-			Content:  content,
-		})
-	}
-
-	// --- types ---
-	for _, decl := range node.Decls {
-		gen, ok := decl.(*ast.GenDecl)
-		if !ok {
-			continue
-		}
-
-		for _, spec := range gen.Specs {
-			typeSpec, ok := spec.(*ast.TypeSpec)
-			if !ok {
-				continue
-			}
-
-			chunkType := ""
-			switch typeSpec.Type.(type) {
-			case *ast.StructType:
-				chunkType = "struct"
-			case *ast.InterfaceType:
-				chunkType = "interface"
-			default:
-				continue
-			}
-
-			start := fset.Position(typeSpec.Pos()).Offset
-			end := fset.Position(typeSpec.End()).Offset
+		case *ast.FuncDecl:
+			start := fset.Position(decl.Pos()).Offset
+			end := fset.Position(decl.End()).Offset
 
 			content, err := extractCode(path, start, end)
 			if err != nil {
@@ -114,10 +71,45 @@ func parseGoFile(path string) []indexer.Chunk {
 
 			chunks = append(chunks, indexer.Chunk{
 				FilePath: path,
-				Name:     typeSpec.Name.Name,
-				Type:     chunkType,
+				Name:     decl.Name.Name,
+				Type:     "function",
 				Content:  content,
 			})
+
+		case *ast.GenDecl:
+			for _, spec := range decl.Specs {
+				typeSpec, ok := spec.(*ast.TypeSpec)
+				if !ok {
+					continue
+				}
+
+				start := fset.Position(typeSpec.Pos()).Offset
+				end := fset.Position(typeSpec.End()).Offset
+
+				content, err := extractCode(path, start, end)
+				if err != nil {
+					continue
+				}
+
+				switch typeSpec.Type.(type) {
+
+				case *ast.StructType:
+					chunks = append(chunks, indexer.Chunk{
+						FilePath: path,
+						Name:     typeSpec.Name.Name,
+						Type:     "struct",
+						Content:  content,
+					})
+
+				case *ast.InterfaceType:
+					chunks = append(chunks, indexer.Chunk{
+						FilePath: path,
+						Name:     typeSpec.Name.Name,
+						Type:     "interface",
+						Content:  content,
+					})
+				}
+			}
 		}
 	}
 
